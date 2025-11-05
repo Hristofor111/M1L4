@@ -1,19 +1,45 @@
-import telebot 
+import telebot
 from config import token
-
 from logic import Pokemon
+import random
+bot = telebot.TeleBot(token)
 
-bot = telebot.TeleBot(token) 
-
-@bot.message_handler(commands=['go'])
-def go(message):
-    if message.from_user.username not in Pokemon.pokemons.keys():
-        pokemon = Pokemon(message.from_user.username)
+# Обработчик стартового сообщения
+@bot.message_handler(commands=['start'])
+def start_command(message):
+    username = message.from_user.username
+    
+    # Проверяем, существует ли уже созданный покемон для пользователя
+    if username not in Pokemon.pokemons.keys():
+        # Создаем нового покемона для пользователя
+        pokemon = Pokemon(username)
+        
+        # Отправляем сообщение с информацией о покемоне
         bot.send_message(message.chat.id, pokemon.info())
-        bot.send_photo(message.chat.id, pokemon.show_img())
+        
+        # Отсылаем фотографию покемона
+        photo_path = pokemon.show_img()
+        # with open(photo_path, 'rb') as f:
+        bot.send_photo(message.chat.id, photo_path)
+            
     else:
-        bot.reply_to(message, "Ты уже создал себе покемона")
+        bot.reply_to(message, "Ты уже создал себе покемона.")
+
+# Обработчик команды /info
+@bot.message_handler(commands=['info'])
+def info_command(message):
+    username = message.from_user.username
+    hp = random.randint(0, 100)
+    power = random.randint(0, 100)
+    bot.reply_to(f"здоровье: {hp}, сила: {power}")
 
 
-bot.infinity_polling(none_stop=True)
+    # Проверяем существование покемона для текущего пользователя
+    if username in Pokemon.pokemons.keys():
+        pokemon = Pokemon.pokemons[username]
+        bot.send_message(message.chat.id, pokemon.info())
+    else:
+        bot.reply_to(message, "Покемон ещё не создан. Используй команду /start.")
 
+if __name__ == "__main__":
+    bot.infinity_polling(none_stop=True)
